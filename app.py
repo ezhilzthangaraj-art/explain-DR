@@ -19,7 +19,7 @@ st.set_page_config(
 # -----------------------------
 # Model path
 # -----------------------------
-MODEL_PATH = "/content/drive/MyDrive/ExplainDR/diabetic_retinopathy_model.keras"
+MODEL_PATH = "diabetic_retinopathy_model.keras"
 
 # -----------------------------
 # Load model
