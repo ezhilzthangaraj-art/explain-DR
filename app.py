@@ -1,4 +1,3 @@
-
 import streamlit as st
 import tensorflow as tf
 import numpy as np
@@ -55,7 +54,12 @@ grad_model = tf.keras.Model(
 # -----------------------------
 def check_image_quality(image):
     image_array = np.array(image)
-    gray = cv2.cvtColor(image_array, cv2.COLOR_RGB2GRAY)
+
+    gray = cv2.cvtColor(
+        image_array,
+        cv2.COLOR_RGB2GRAY
+    )
+
     sharpness = cv2.Laplacian(
         gray,
         cv2.CV_64F
@@ -67,9 +71,19 @@ def check_image_quality(image):
 # Prediction
 # -----------------------------
 def predict_image(image):
-    img = image.resize((224, 224))
-    img_array = np.array(img).astype("float32")
-    img_array = np.expand_dims(img_array, axis=0)
+
+    img = image.resize(
+        (224, 224)
+    )
+
+    img_array = np.array(
+        img
+    ).astype("float32")
+
+    img_array = np.expand_dims(
+        img_array,
+        axis=0
+    )
 
     prediction = model.predict(
         img_array,
@@ -77,10 +91,15 @@ def predict_image(image):
     )[0][0]
 
     if prediction >= 0.5:
+
         result = "DR"
+
         confidence = prediction * 100
+
     else:
+
         result = "No DR"
+
         confidence = (1 - prediction) * 100
 
     return result, confidence, prediction
@@ -90,8 +109,13 @@ def predict_image(image):
 # -----------------------------
 def generate_gradcam(image):
 
-    img = image.resize((224, 224))
-    original = np.array(img).astype("uint8")
+    img = image.resize(
+        (224, 224)
+    )
+
+    original = np.array(
+        img
+    ).astype("uint8")
 
     img_array = np.expand_dims(
         original.astype("float32"),
@@ -122,7 +146,10 @@ def generate_gradcam(image):
         axis=-1
     )
 
-    cam = tf.maximum(cam, 0)
+    cam = tf.maximum(
+        cam,
+        0
+    )
 
     cam = cam / (
         tf.reduce_max(cam) + 1e-8
@@ -160,6 +187,54 @@ def generate_gradcam(image):
     return original, heatmap, overlay
 
 # -----------------------------
+# Voice explanation
+# -----------------------------
+def speak_text(text):
+
+    import streamlit.components.v1 as components
+
+    safe_text = (
+        text
+        .replace("\\", "\\\\")
+        .replace("'", "\\'")
+        .replace("\n", " ")
+    )
+
+    components.html(
+        f"""
+        <script>
+        function speakText() {{
+            const text = '{safe_text}';
+
+            const speech =
+                new SpeechSynthesisUtterance(text);
+
+            speech.lang = 'en-IN';
+            speech.rate = 0.9;
+
+            window.speechSynthesis.cancel();
+
+            window.speechSynthesis.speak(speech);
+        }}
+        </script>
+
+        <button
+            onclick="speakText()"
+            style="
+                padding:10px 18px;
+                font-size:16px;
+                border-radius:8px;
+                border:1px solid #888;
+                cursor:pointer;
+                background:white;
+            ">
+            🔊 Listen to Explanation
+        </button>
+        """,
+        height=60
+    )
+
+# -----------------------------
 # UI
 # -----------------------------
 st.title("👁️ ExplainDR")
@@ -176,9 +251,13 @@ uploaded_file = st.file_uploader(
 
 if uploaded_file is not None:
 
-    image = Image.open(uploaded_file).convert("RGB")
+    image = Image.open(
+        uploaded_file
+    ).convert("RGB")
 
-    st.subheader("🖼️ Uploaded Retina Image")
+    st.subheader(
+        "🖼️ Uploaded Retina Image"
+    )
 
     st.image(
         image,
@@ -188,16 +267,23 @@ if uploaded_file is not None:
     # -----------------------------
     # Image quality
     # -----------------------------
-    sharpness = check_image_quality(image)
+    sharpness = check_image_quality(
+        image
+    )
 
-    st.subheader("📷 Image Quality")
+    st.subheader(
+        "📷 Image Quality"
+    )
 
     if sharpness < 50:
+
         st.warning(
             f"Image may be blurry. "
             f"Sharpness score: {sharpness:.1f}"
         )
+
     else:
+
         st.success(
             f"Image quality acceptable. "
             f"Sharpness score: {sharpness:.1f}"
@@ -210,13 +296,18 @@ if uploaded_file is not None:
         image
     )
 
-    st.subheader("🔬 AI Screening Result")
+    st.subheader(
+        "🔬 AI Screening Result"
+    )
 
     if result == "DR":
+
         st.error(
             f"Result: {result}"
         )
+
     else:
+
         st.success(
             f"Result: {result}"
         )
@@ -229,30 +320,35 @@ if uploaded_file is not None:
     # -----------------------------
     # Summary
     # -----------------------------
-    st.subheader("📋 Screening Summary")
+    st.subheader(
+        "📋 Screening Summary"
+    )
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
+
         st.metric(
             "Result",
             result
         )
 
     with col2:
+
         st.metric(
             "Confidence",
             f"{confidence:.1f}%"
         )
 
     with col3:
+
         st.metric(
             "Sharpness",
             f"{sharpness:.1f}"
         )
 
     # -----------------------------
-    # Explanation
+    # Explanation text
     # -----------------------------
     st.subheader(
         "🩺 What does this result mean?"
@@ -260,7 +356,7 @@ if uploaded_file is not None:
 
     if result == "DR":
 
-        st.write(
+        explanation = (
             "The AI model detected image patterns "
             "associated with diabetic retinopathy. "
             "This result is intended as screening "
@@ -270,13 +366,24 @@ if uploaded_file is not None:
 
     else:
 
-        st.write(
+        explanation = (
             "The AI model did not detect strong "
             "image patterns associated with "
             "diabetic retinopathy. This is a "
             "screening result and not a medical "
             "diagnosis."
         )
+
+    st.write(
+        explanation
+    )
+
+    # -----------------------------
+    # Voice button
+    # -----------------------------
+    speak_text(
+        explanation
+    )
 
     # -----------------------------
     # Grad-CAM
@@ -292,18 +399,21 @@ if uploaded_file is not None:
     col1, col2, col3 = st.columns(3)
 
     with col1:
+
         st.image(
             original,
             caption="Original Image"
         )
 
     with col2:
+
         st.image(
             heatmap,
             caption="Grad-CAM Heatmap"
         )
 
     with col3:
+
         st.image(
             overlay,
             caption="Grad-CAM Overlay"
@@ -326,11 +436,30 @@ if uploaded_file is not None:
 
     c1, c2, c3, c4, c5 = st.columns(5)
 
-    c1.metric("Accuracy", "95.82%")
-    c2.metric("Precision", "96.63%")
-    c3.metric("Sensitivity", "95.03%")
-    c4.metric("Specificity", "96.63%")
-    c5.metric("F1 Score", "95.82%")
+    c1.metric(
+        "Accuracy",
+        "95.82%"
+    )
+
+    c2.metric(
+        "Precision",
+        "96.63%"
+    )
+
+    c3.metric(
+        "Sensitivity",
+        "95.03%"
+    )
+
+    c4.metric(
+        "Specificity",
+        "96.63%"
+    )
+
+    c5.metric(
+        "F1 Score",
+        "95.82%"
+    )
 
     st.caption(
         "Metrics shown are from the experimental "
